@@ -1,5 +1,7 @@
 package com.gxnu.mapper;
 
-public interface UserMapper {
+import com.gxnu.domain.User;
 
+public interface UserMapper {
+    public User selectUserByAccountAndPassword(String account,String password);
 }
