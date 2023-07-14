@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gxnu.mapper.ScoreMapper">
+
+
+    <insert id="insertIntoScoreAccount">
+        insert into score (`account`) values (#{account})
+    </insert>
+    <update id="updateIdeologicalAndMoralScore">
+        update score set ideologicalAndMoral = #{score}
+    </update>
+    <update id="updateCourseLearningScore">
+        update score set courseLearning = #{score}
+    </update>
+    <update id="updateBodyArtIntegratedScore">
+        update score set bodyArtIntegrated= #{score}
+    </update>
+    <update id="updatePracticeAbilityScore">
+        update score set practiceAbility= #{score}
+    </update>
+    <update id="updateTotalScoreScore">
+        update score set totalScore = #{score}
+    </update>
+    <update id="updateScore">
+        update score set ideologicalAndMoral=#{ideologicalAndMoral}, courseLearning=#{courseLearning}, practiceAbility=#{practiceAbility}, bodyArtIntegrated=#{bodyArtIntegrated},totalScore=#{totalScore} where account = #{account}
+    </update>
+    <select id="selectScore" resultType="com.gxnu.domain.Score">
+        select * from score where `account`=#{account}
+    </select>
+    <select id="selectIdeologicalAndMoralScore" resultType="java.lang.Double">
+        select * from score where ideologicalAndMoral = #{score}
+    </select>
+    <select id="selectCourseLearningScore" resultType="java.lang.Double">
+        select * from score where courseLearning = #{score}
+    </select>
+    <select id="selectBodyArtIntegratedScore" resultType="java.lang.Double">
+        select * from score where bodyArtIntegrated = #{score}
+    </select>
+    <select id="selectPracticeAbilityScore" resultType="java.lang.Double">
+        select * from score where practiceAbility = #{score}
+    </select>
+    <select id="selectTotalScoreScore" resultType="java.lang.Double">
+        select * from score where totalScore = #{score}
+    </select>
+
+</mapper>

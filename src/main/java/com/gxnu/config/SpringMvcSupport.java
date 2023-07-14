@@ -9,7 +9,6 @@ public class SpringMvcSupport extends WebMvcConfigurationSupport {
     //设置静态资源访问过滤，当前类需要设置为配置类，并被扫描加载
     @Override
     protected void addResourceHandlers(ResourceHandlerRegistry registry) {
-        //当访问/pages/????时候，从/pages目录下查找内容
         registry.addResourceHandler("/html/**").addResourceLocations("/html/");
         registry.addResourceHandler("/js/**").addResourceLocations("/js/");
         registry.addResourceHandler("/css/**").addResourceLocations("/css/");

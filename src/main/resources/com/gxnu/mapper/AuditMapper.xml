@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gxnu.mapper.AuditMapper">
+
+
+    <insert id="insertIntoAudit">
+        insert into audit (belong,status,rulesID,file) values (#{belong},#{status},#{rulesID},#{file})
+    </insert>
+    <update id="deleteAudit">
+        update audit set isDelete=1 where auditID=#{auditID}
+    </update>
+    <update id="updateAuditStatus">
+        update audit set status=#{status} where auditID=#{auditID}
+    </update>
+    <update id="updateAuditRate">
+        update audit set status=1,score=#{score} where auditID=#{auditID}
+    </update>
+    <select id="selectAuditByBelong" resultType="com.gxnu.domain.Audit">
+        select * from audit where belong=#{belong} and isDelete=0
+    </select>
+    <select id="selectAuditByFile" resultType="com.gxnu.domain.Audit">
+        select * from audit where file=#{file} and isDelete=0
+    </select>
+    <select id="selectAuditByAuditID" resultType="com.gxnu.domain.Audit">
+        select * from audit where auditID=#{auditID} and isDelete=0
+    </select>
+
+    <select id="selectAuditByLike" resultType="com.gxnu.domain.Audit">
+        select * from audit where belong like  CONCAT('%',#{account},'%')
+    </select>
+
+
+</mapper>

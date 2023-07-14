@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>学生端</title>
+    <style>
+        .el-header {
+            background-color: #B3C0D1;
+            color: #333;
+           line-height: 60px;
+        }
+        .el-aside {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <el-row>
+        <el-col :span="5">
+            <el-menu>
+                <el-menu-item index="1">
+                    <i class="el-icon-s-home"></i>
+                    <span slot="title">学生端</span>
+                </el-menu-item>
+                <el-menu-item index="2" @click="changeToUserCenter()">
+                    <i class="el-icon-user"></i>
+                    <span slot="title">个人中心</span>
+                </el-menu-item>
+                <el-menu-item index="3" @click="changeToManagement()">
+                    <i class="el-icon-trophy"></i>
+                    <span slot="title">综测管理</span>
+                </el-menu-item>
+                <el-menu-item index="4" @click="changeToCheckScore()">
+                    <i class="el-icon-s-flag"></i>
+                    <span slot="title">总分查看</span>
+                </el-menu-item>
+            </el-menu>
+        </el-col>
+        <el-col :span="19">
+            <el-header style="text-align: right; font-size: 12px;">
+                <el-dropdown>
+                    <i class="el-icon-setting" style="margin-right: 15px"></i>
+                    <el-dropdown-menu slot="dropdown">
+                        <el-dropdown-item @click.native="gotoAdmin()">切换管理员端</el-dropdown-item>
+                        <el-dropdown-item @click.native="signOut()">退出系统</el-dropdown-item>
+                    </el-dropdown-menu>
+                </el-dropdown>
+                <span>{{this.userData.account}}</span>
+            </el-header>
+            <el-main v-if="this.defaultPage">
+                <el-image
+                        style="width: 100%; height:590px"
+                        :src="defaultPageUrl">
+                </el-image>
+            </el-main>
+            <el-main v-if="this.userCenter">
+                <el-row>
+                    <el-col :span="8">
+                            <el-avatar :size="150" :src="circleUrl"></el-avatar>
+                    </el-col>
+                    <el-col :span="16">
+                        <div class="grid-content bg-purple-light">
+                            <el-container>
+                                <el-main>
+                                    <el-form ref="form" :model="this.userData" label-position="right" label-width="80px" size="large">
+                                        <!--label-width控制表单位置-->
+                                        <el-form-item label="角色">
+                                            <el-col>
+                                                <el-input v-model="this.userData.role" readonly></el-input>
+                                            </el-col>
+                                        </el-form-item>
+                                        <el-form-item label="学号">
+                                            <el-col>
+                                                <el-input v-model="this.userData.account" readonly></el-input>
+                                            </el-col>
+                                        </el-form-item>
+                                        <el-form-item label="学院">
+                                            <el-col>
+                                                <el-input v-model="this.userData.college" readonly></el-input>
+                                            </el-col>
+                                        </el-form-item>
+                                        <el-form-item label="班级">
+                                            <el-col>
+                                                <el-input v-model="this.userData.theClass" readonly></el-input>
+                                            </el-col>
+                                        </el-form-item>
+                                        <el-form-item>
+                                            <el-button type="primary" @click="changePasswordDialogVisible = true">修改密码</el-button>
+                                        </el-form-item>
+                                    </el-form>
+                                    <el-dialog
+                                            title="修改密码"
+                                            :visible.sync="changePasswordDialogVisible"
+                                            width="30%"
+                                            center>
+                                        <el-form :model="this.changePasswordForm" ref="this.changePasswordForm" label-width="100px" class="demo-ruleForm">
+                                            <el-form-item label="原始密码" prop="originalPassword">
+                                                <el-input type="password"  v-model="changePasswordForm.originalPassword" show-password></el-input>
+                                            </el-form-item>
+                                            <el-form-item label="新密码" prop="checkPass">
+                                                <el-input type="password"  v-model="changePasswordForm.newPassword" show-password></el-input>
+                                            </el-form-item>
+                                            <el-form-item label="确认密码" prop="age">
+                                                <el-input type="password" v-model="changePasswordForm.checkPassword" show-password></el-input>
+                                            </el-form-item>
+                                            <el-form-item>
+                                                <el-button type="primary" @click="submitChangePasswordForm('this.changePasswordForm')">提交</el-button>
+                                                <el-button @click="changePasswordDialogVisible = false">取消</el-button>
+                                            </el-form-item>
+                                        </el-form>
+                                    </el-dialog>
+
+                                </el-main>
+                            </el-container>
+                        </div>
+                    </el-col>
+                </el-row>
+            </el-main>
+            <el-main v-if="this.allMeasureManagement">
+                <el-header style="text-align: right; background-color: #ffffff">
+                    <el-button type="success" style="margin-right: 15px" @click="addAuditDialogVisible = true">
+                        添加
+                    </el-button>
+                </el-header>
+
+                <el-table
+                        :data="this.userAuditData"
+                        style="width: 100%">
+                    <el-table-column
+                            prop="rulesContent"
+                            label="规则内容"
+                            >
+                    </el-table-column>
+
+                        <el-table-column label="证明材料地址"  show-overflow-tooltip>
+                            <template slot-scope="scope">
+                                <a :href="scope.row.file" target="_blank" class="buttonText">{{scope.row.file}}</a>
+                            </template>
+                        </el-table-column>
+
+                    <el-table-column
+                            prop="status"
+                            label="状态"
+                            align="center">
+                        <template slot-scope="scope">
+                            <el-tag
+                                    :type="scope.row.status == '1' ? 'success' : scope.row.status == '0'?'':'danger'"
+                                    disable-transitions>{{scope.row.status == '1' ? "审核通过" :scope.row.status ==
+                            '0'?"待审核":"打回"}}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" align="center">
+                        　　　　<template slot-scope="scope">
+                        　　　　　　<el-button type="danger" @click="deleteAudit(scope.row.auditID)">删除</el-button>
+                        　　　　</template>
+                    </el-table-column>
+
+                </el-table>
+                <el-dialog
+                        title="综测材料上传"
+                        :visible.sync="addAuditDialogVisible"
+                        width="40%"
+                        center>
+                    <el-container>
+                        <el-header style="background-color: #ffffff">
+                            <el-cascader :options="options" :show-all-levels="false" v-model="selectedOptions"></el-cascader>
+                        </el-header>
+                        <el-main>
+                            <el-upload
+                                    class="upload-demo"
+                                    drag
+                                    action="https://img.zzzsleep.icu/api/v1/upload"
+                                    accept=multipart/form-data"
+                                    :on-success="uploadFileByCloud"
+                                    :headers="cloudUploadHeaders">
+                                <i class="el-icon-upload"></i>
+                                <el-row type="flex" justify="center">
+                                    <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
+                                </el-row>
+                                <div class="el-upload__tip" slot="tip">
+                                    <el-row>
+                                        <el-rol :span="16" style="margin-bottom: 30px;display: flex;flex-wrap: wrap">
+                                            <div>只能上传jpg/png文件，且不超过500kb</div>
+                                        </el-rol>
+                                        </el-row>
+                                    <el-row type="flex" justify="center">
+                                        <el-rol :span="8"><el-button type="primary" @click="submitAuditAdd()">确定</el-button><el-button type="primary" @click="addAuditDialogVisible=false">取消</el-button></el-rol>
+                                    </el-row>
+                                </div>
+                            </el-upload>
+                        </el-main>
+                    </el-container>
+                </el-dialog>
+            </el-main>
+            <el-main v-if="this.checkScoreView">
+                <el-header style="text-align: right; background-color: #ffffff">
+                    <el-button type="primary" style="margin-right: 15px" @click="checkScore()">
+                        重新算分
+                    </el-button>
+                </el-header>
+                <el-main>
+                    <el-descriptions title="综测分" direction="vertical" :column="4" border>
+                        <el-descriptions-item label="思想品德综合分">{{this.scoreTable.ideologicalAndMoral}}</el-descriptions-item>
+                        <el-descriptions-item label="课程学习成绩综合分">{{this.scoreTable.courseLearning}}</el-descriptions-item>
+                        <el-descriptions-item label="体艺综合分" >{{this.scoreTable.bodyArtIntegrated}}</el-descriptions-item>
+                        <el-descriptions-item label="创新创业与实践能力">
+                            {{this.scoreTable.practiceAbility}}
+                        </el-descriptions-item>
+                        <el-descriptions-item label="总分">{{this.scoreTable.totalScore}}</el-descriptions-item>
+                    </el-descriptions>
+                </el-main>
+            </el-main>
+        </el-col>
+    </el-row>
+</div>
+<script src="../js/vue.js"></script>
+<script src="../element-ui/lib/index.js"></script>
+<script src="../js/jquery.min.js"></script>
+<link rel="stylesheet" href="../element-ui/lib/theme-chalk/index.css">
+<script>
+    new Vue({
+        el: "#app",
+        data() {
+            let defaultPageUrl= "../img/defaultPage.jpg";
+            let circleUrl= "../img/1.jpg";
+            let cloudImageFileUrl;
+            let userData = {
+                account: "demo",
+                isAdmin: 0,
+                role: '普通用户',
+                college: "计算机学院",
+                theClass: "21软件工程一班",
+                userID: "0",
+                realName: ''
+            };
+            let changePasswordForm = {
+                originalPassword : '',
+                newPassword : '',
+                checkPassword : '',
+                userID : ''
+            };
+            let userAuditData = {
+                updateTime:'',
+                rulesID:'',
+                status:'',
+                file:'',
+                rulesContent:''
+            };
+            let addAuditForm={
+                belong:'',
+                rulesID:'',
+                file:''
+            };
+            let cloudUploadHeaders={
+                Accept:"application/json",
+                Authorization:"Bearer 2|bvReT4OkZYAlUguBDBe3G55Ut9p0IRmNY3ubZolI"
+            };
+            let scoreTable = {
+                ideologicalAndMoral:'0.0',
+                courseLearning:'0.0',
+                bodyArtIntegrated:'0.0',
+                practiceAbility:'0.0',
+                totalScore:'0.0'
+            };
+            return {
+                defaultPage:true,
+                changePasswordDialogVisible:false,
+                allMeasureManagement:false,
+                userCenter:false,
+                addAuditDialogVisible:false,
+                cloudUploadHeaders,
+                changePasswordForm,
+                userData,
+                defaultPageUrl,
+                circleUrl,
+                userAuditData,
+                addAuditForm,
+                cloudImageFileUrl,
+                scoreTable,
+                options:[],
+                selectedOptions: [],
+                defaultParams: {
+                    label: 'name',
+                    value: 'id',
+                    children: 'children'
+                }
+
+            }
+        },
+        methods: {
+            signOut() {
+                $.ajax({
+                    url: '/measurement_war/user/logout',
+                    type: 'Get',
+                    success: function (response) {
+                        if (response.code == 0) {
+                            window.location.href = "/measurement_war/index.html"
+                        }
+                    },
+                    error: function (response) {
+                        alert(response)
+                    }
+                })
+            },
+            checkScore(){
+                let _this = this
+                $.ajax({
+                    url:'/measurement_war/score/calculate',
+                    type:'post',
+                    data:{
+                        "account":this.userData.account
+                    },
+                    success:function (response){
+                        console.log(_this.scoreTable)
+                        if(response.code == 0){
+                            _this.scoreTable = response.data
+                        }
+                        console.log(_this.scoreTable)
+
+                    },
+                    error:function(response){
+                        alter(response.message)
+                    }
+
+                })
+            },
+            gotoAdmin() {
+                let _this = this;
+                $.ajax({
+                    url: '/measurement_war/user/current',
+                    type: 'Get',
+                    success: function (response) {
+                        if (response.code == 300) {
+                            window.location.href = "/measurement_war/html/admin.html"
+                        } else {
+                            _this.$message({
+                                message: '权限不足',
+                                type: 'error'
+                            });
+                        }
+                    },
+                    error: function (response) {
+                        alert(response)
+                    }
+                })
+            },
+            changeToUserCenter(){
+                this.defaultPage=false;
+                this.userCenter = true;
+                this.allMeasureManagement = false;
+                this.checkScoreView = false;
+            },
+            changeToManagement(){
+                this.defaultPage=false;
+                this.userCenter = false;
+                this.allMeasureManagement = true;
+                this.checkScoreView = false;
+            },
+            changeToCheckScore(){
+                this.defaultPage=false;
+                this.userCenter = false;
+                this.allMeasureManagement = false;
+                this.checkScoreView = true;
+            },
+            uploadFileByCloud(response, file, fileList){
+                if(response.status == true){
+                    this.cloudImageFileUrl = response.data.links.url
+                }else{
+                    this.$message({
+                        message: '图片上传失败，请检查网络！',
+                        type: 'warning'
+                    });
+                }
+            },
+            submitChangePasswordForm(data){
+                let _this = this;
+                _this.changePasswordForm.userID = _this.userData.userID;
+                if(_this.changePasswordForm.checkPassword == _this.changePasswordForm.newPassword){
+                    $.ajax({
+                        url: '/measurement_war/user/changPassword',
+                        type: 'post',
+                        data: {
+                            "userID": _this.changePasswordForm.userID,
+                            "oldPassword": _this.changePasswordForm.originalPassword,
+                            "newPassword":_this.changePasswordForm.newPassword,
+                            "checkPassword":_this.changePasswordForm.checkPassword
+                        },
+                        success:function (response){
+                            if(response.code == 40003){
+                                _this.$message({
+                                    message: '原始密码不正确',
+                                    type: 'warning'
+                                });
+                            }else if(response.code == 0) {
+                                _this.$message({
+                                    message: '修改成功',
+                                    type: 'success'
+                                });
+                                _this.signOut();
+                                window.location.href = "/measurement_war/index.html";
+                            }
+                        },
+                        error:function (response) {
+                            alert(response.message)
+                        }
+                    })
+                }else {
+                    _this.$message({
+                        message: '两次密码不一致',
+                        type: 'warning'
+                    });
+                }
+            },
+            refresh(){
+                window.location.reload()
+            },
+            deleteAudit(AuditID){
+                console.log(AuditID)
+                let _this = this
+                $.ajax({
+                    url: '/measurement_war/audit/delete',
+                    type: 'post',
+                    data: {
+                        "auditID":AuditID
+                    },
+                    success:function (response){
+                        if(response.code == 40000){
+                            _this.$message({
+                                message: '删除失败，请稍后重试',
+                                type: 'warning'
+                            });
+                        }else if(response.code == 0) {
+                            _this.$message({
+                                message: '删除成功',
+                                type: 'success'
+                            });
+                            setTimeout(_this.refresh, 1000);
+                        }
+                    },
+                    error:function (response) {
+                        alert(response.message)
+                    }
+                })
+            },
+
+            submitAuditAdd() {
+                let _this = this;
+                $.ajax({
+                    url: '/measurement_war/audit/add',
+                    type: 'post',
+                    data:{
+                        "belong":this.userData.account,
+                        "status":0,
+                        "rulesID":this.selectedOptions[1],
+                        "file":this.cloudImageFileUrl
+                    },
+                    success:function (response){
+                        if(response.code == 0){
+                            _this.$message({
+                                message: '添加成功',
+                                type: 'success'
+                            });
+                            setTimeout(_this.refresh, 1000);
+                        }
+                    },
+                    error:function (response){
+                        _this.$message({
+                            message: response.message,
+                            type: 'error'
+                        });
+                    }
+                })
+            }
+        },
+        mounted() {
+            let _this = this;
+            $.ajax({
+                url: '/measurement_war/user/current',
+                type: 'Get',
+                success:function (response){
+                    if (response.code == 300 || response.code == 200) {
+                        console.log(response.data);
+                        _this.userData.account = response.data.account;
+                        _this.userData.isAdmin = response.data.isAdmin;
+                        _this.userData.college = response.data.college;
+                        _this.userData.theClass = response.data.theClass;
+                        _this.userData.userID = response.data.userID;
+                        if(_this.userData.isAdmin > 0){
+                            _this.userData.role = '管理员'
+                        }
+                        $.ajax({
+                            url: '/measurement_war/audit/find',
+                            type: 'post',
+                            data:{
+                                "belong":_this.userData.account
+                            },
+                            success:function (response){
+                                if (response.code == 0) {
+                                    console.log("response.data")
+                                    console.log(response.data);
+                                    _this.userAuditData = response.data
+                                }
+                                console.log(_this.userAuditData)
+                            },
+                            error:function (response) {
+                                alert(response)
+                            }
+                        })
+
+                    } else {
+                        window.location.href = "/measurement_war/index.html"
+                    }
+                },
+
+                error:function (response) {
+                    alert(response)
+                }
+            });
+            $.ajax({
+                url: '/measurement_war/rules/list',
+                type: 'Get',
+                success:function (response){
+                    if (response.code == 0) {
+                        console.log("response.data rules/list")
+                        console.log(response.data);
+                        _this.options = response.data
+                    }
+                    console.log("options 真实数据")
+                    console.log(_this.options)
+                },
+                error:function (response) {
+                    alert(response)
+                }
+            })
+
+        }
+    })
+</script>
+</body>
+</html>

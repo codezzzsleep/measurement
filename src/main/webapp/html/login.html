@@ -1,116 +1,169 @@
 <!DOCTYPE html>
 <html lang="en">
-
+<!-- https://codepen.io/danielkvist/pen/LYNVyPL -->
 <head>
-    <meta charset="UTF-8">
-    <title>登录</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录</title>
+  <style>
+    label {
+      display: inline-block;
+      width: 60px;
+      text-align: right;
+      margin-right: 10px;
+    }
+    select {
+      width: 305px;
+      height: 37px;
+      margin: 0.4rem 0;
+      border: 0;
+    }
+  </style>
+  <link rel="stylesheet" href="../css/login.css">
 </head>
-
-<body style="background: #79bbff">
-<div id="app" style="width: 30%; margin-left: 30%;margin-right: 30%; margin-top: 10%;">
-    <h2 style="margin-left: 50%;">
-        欢迎登录
-    </h2>
-    <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="100px" class="demo-ruleForm">
-        <el-form-item label="账户" prop="name">
-            <el-input v-model="ruleForm.name"></el-input>
-        </el-form-item>
-        <el-form-item label="密码" prop="pass">
-            <el-input type="password" v-model="ruleForm.pass" autocomplete="off"></el-input>
-        </el-form-item>
-        <div style="margin-left:10%;">
-            <el-form-item>
-                <el-button type="primary" @click="submitForm('ruleForm')">登录</el-button>
-                <el-button type="primary" @click="open" style="margin-left: 30%;">注册</el-button>
-            </el-form-item>
-        </div>
-    </el-form>
+<body>
+<div class="container">
+  <!-- Sign Up -->
+  <div class="container__form container--signup">
+    <form action="/measurement_war/html/login.html" class="form" id="form1">
+      <h2 class="form__title">注册</h2>
+      <input type="text" placeholder="工号/学号" class="input" id="registerAccount" />
+      <input type="password" placeholder="密码" class="input" id="registerPassword" />
+      <input type="password" placeholder="确认密码" class="input" id="checkPassword"/>
+      <!--      <label for="province">省份：</label>-->
+      <select  id="college" onchange="selectClass()"  >
+        <option value="">请选择学院</option>
+        <option value="计算机学院">计算机学院</option>
+        <option value="设计学院">设计学院</option>
+        <option value="文学院">文学院</option>
+        <option value="数统学院">数统学院</option>
+      </select>
+      <!--      <label for="city">城市：</label>-->
+      <select id="class">
+        <option value="">请选择班级</option>
+      </select>
+      <button class="btn" onclick="register()">注册</button>
+    </form>
+  </div>
+  <!-- Sign In -->
+  <div class="container__form container--signin">
+    <form action="/measurement_war/index.html" class="form" id="form2">
+      <h2 class="form__title">登录</h2>
+      <input type="text" placeholder="工号/学号" class="input" id="loginAccount"/>
+      <input type="password" placeholder="密码" class="input" id="loginPassword"/>
+      <a href="#" class="link">忘记密码？</a>
+      <button class="btn" onclick="login()">登录</button>
+    </form>
+  </div>
+  <!-- Overlay -->
+  <div class="container__overlay">
+    <div class="overlay">
+      <div class="overlay__panel overlay--left">
+        <button class="btn" id="signIn">登录</button>
+      </div>
+      <div class="overlay__panel overlay--right">
+        <button class="btn" id="signUp">注册</button>
+      </div>
+    </div>
+  </div>
 </div>
-<div id="sentence" style="text-align: center; margin-top: 10%;">耐心点，给好运一点时间。</div>
-
-<script src="../js/axios-0.18.0.js"></script>
-<script src="../js/qs.js"></script>
-<script src="../js/vue.js"></script>
-<script src="../element-ui/lib/index.js"></script>
-<link rel="stylesheet" href="../element-ui/lib/theme-chalk/index.css">
+<link rel="stylesheet" href="../css/login.css">
+<script src="../js/jquery.min.js"></script>
 <script>
-    new Vue({
-        el: "#app",
-        data() {
-            return {
-                ruleForm: {
-                    name: '',
-                    pass: ''
-                },
-                rules: {
-                    name: [{
-                        required: true,
-                        message: '请输入账户',
-                        trigger: 'blur'
-                    }],
-                    pass: [{
-                        required: true,
-                        message: '请输入密码',
-                        trigger: 'blur'
-                    }]
-                }
-            };
-        },
-        methods: {
-            submitForm(formName) {
-                this.$refs[formName].validate((valid) => {
-                    if (valid) {
-                        that = this;
-                        console.log(that.ruleForm.name);
-                        axios({
-                            method: 'post',
-                            url: '/push_war/login',
-                            data: Qs.stringify({
-                                'username': that.ruleForm.name,
-                                'password': that.ruleForm.pass,
-                            })
-                        }).then(function (response) {
-                            if (response.status === 200) {
-                                window.location.href = response.request.responseURL;
-                            }
-                            if( response.status === 201){
-                                that.$message.error('账户或密码错误请重新输入');
-                            }
-                            if(response.status === 202){
-                                that.$message.error('请登录');
-                            }
-                        });
-                    } else {
+  const signInBtn = document.getElementById("signIn");
+  const signUpBtn = document.getElementById("signUp");
+  const fistForm = document.getElementById("form1");
+  const secondForm = document.getElementById("form2");
+  const container = document.querySelector(".container");
 
-                        return false;
-                    }
-                });
+  signInBtn.addEventListener("click", () => {
+    container.classList.remove("right-panel-active");
+  });
 
-            },
-            resetForm(formName) {
-                this.$refs[formName].resetFields();
-            },
-            open() {
-                this.$alert('请联系管理员添加', '注册提示', {
-                    confirmButtonText: '确定',
-                });
-            }
+  signUpBtn.addEventListener("click", () => {
+    container.classList.add("right-panel-active");
+  });
+
+  fistForm.addEventListener("submit", (e) => e.preventDefault());
+  secondForm.addEventListener("submit", (e) => e.preventDefault());
+  var classes = {
+    "计算机学院": ["20级计本一班", "20级计本二班", "20级软工一班", "20级软工二班", "20级大数据", "20级信安","21级计本一班", "21级计本二班", "21级软工一班", "21级软工二班", "21级大数据", "21级信安"],
+    "设计学院": ["20级工业一班", "20级视传一班", "20级服装设计一班", "21级工业一班", "21级视传一班", "21级服装设计一班"],
+    "文学院": ["20级音乐学", "20级音乐表演", "20级舞蹈学", "21级音乐学", "21级音乐表演", "21级舞蹈学"],
+    "数统学院":["20级数应一班","20级数应二班","20级数应三班","20级数应四班","20级统计学一班","20级统计学二班","21级数应一班","21级数应二班","21级数应三班","21级数应四班","21级统计学一班","21级统计学二班"]
+  };
+
+  function selectClass() {
+    let college = document.getElementById("college").value;
+    let classSelect = document.getElementById("class");
+    classSelect.options.length = 0;
+    classSelect.options.add(new Option("请选择班级", ""));
+    if (college) {
+      let classesArray = classes[college];
+      for (let i = 0; i < classesArray.length; i++) {
+        classSelect.options.add(new Option(classesArray[i], classesArray[i]));
+      }
+    }
+  }
+  function login() {
+    let account = document.getElementById("loginAccount").value;
+    let password = document.getElementById("loginPassword").value;
+    if((account == "")||(password == "")){
+      alert("账户或密码不能为空")
+    }else{
+      $.ajax({
+        url: '/measurement_war/user/login',
+        type: 'post',
+        data: {
+          "account": account,
+          "password": password
         },
-        //当页面加载完成后自动调用
-        mounted() {
-            axios({
-                methods: "get",
-                url: "https://v.api.aa1.cn/api/api-wenan-anwei/index.php?type=json"
-            }).then(function (resp) {
-                if (resp.status == 200) {
-                    document.getElementById("sentence").innerHTML = resp.data.anwei
-                }
-                // console.log(resp)
-            })
+        success:function (response) {
+          if(response.code == 0){
+            alert("登录成功！")
+            window.location.href = "/measurement_war/index.html"
+          }else if(response.code == 40001){
+            alert(response.message)
+            window.location.href="/measurement_war/html/login.html"
+          }
         }
+      })
+    }
+  }
 
-    })
+  function register() {
+    let account = document.getElementById("registerAccount").value
+    let password = document.getElementById("registerPassword").value
+    let checkPassword = document.getElementById("checkPassword").value
+    let college = document.getElementById("college").value
+    let theClass = document.getElementById("class").value
+    if(account==""||(password=="")||(checkPassword=="")||(college=="")||(theClass=="")){
+      alert("请检查数据格式")
+    } else if(password != checkPassword){
+      alert("两次输入密码不相同")
+    }else {
+      $.ajax({
+        url: '/measurement_war/user/register',
+        type: 'post',
+        data: {
+          "account": account,
+          "password": password,
+          "checkPassword":checkPassword,
+          "college":college,
+          "theClass":theClass
+        },
+        success:function (response){
+          if (response.code == 40002){
+            alert(response.message)
+            window.location.href = "/measurement_war/html/login.html"
+          }else {
+            alert(response.message)
+            window.location.href = "/measurement_war/index.html"
+          }
+        }
+      })
+    }
+  }
 </script>
 </body>
-
 </html>

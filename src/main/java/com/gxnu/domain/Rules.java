@@ -12,4 +12,5 @@ public class Rules {
     private Integer addScore;
     private Double maxScore;
     private String belong;
+    private Integer isDelete;
 }

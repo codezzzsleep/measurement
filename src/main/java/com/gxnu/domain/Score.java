@@ -10,4 +10,6 @@ public class Score {
     private Double courseLearning;
     private Double bodyArtIntegrated;
     private Double practiceAbility;
+    private Double totalScore;
+    private Integer isDelete;
 }

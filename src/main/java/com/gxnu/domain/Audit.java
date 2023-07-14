@@ -11,5 +11,6 @@ public class Audit {
     private Integer status;
     private Integer rulesID;
     private String file;
-
+    private Double score;
+    private Integer isDelete;
 }

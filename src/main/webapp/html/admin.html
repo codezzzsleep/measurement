@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>管理员端</title>
+    <style>
+        .el-header {
+            background-color: #B3C0D1;
+            color: #333;
+            line-height: 60px;
+        }
+    </style>
+</head>
+<body>
+<div id="app" >
+    <el-row>
+        <el-col :span="5"  >
+            <el-menu>
+                <el-menu-item index="1" >
+                    <i class="el-icon-s-home"></i>
+                    <span slot="title">管理端</span>
+                </el-menu-item>
+                <el-menu-item index="2" @click="changeToUserCenter()">
+                    <i class="el-icon-user"></i>
+                    <span slot="title">个人中心</span>
+                </el-menu-item>
+                <el-submenu index="3">
+                    <template slot="title">
+                        <i class="el-icon-view"></i>
+                        <span>综测审核</span>
+                    </template>
+                    <el-menu-item index="3-1" @click="changeToStudentAudit()">学生</el-menu-item>
+                    <el-menu-item index="3-2" @click="changeToCounsellorAudit()">辅导员</el-menu-item>
+                </el-submenu>
+                <el-submenu index="4">
+                    <template slot="title">
+                        <i class="el-icon-lock" ></i>
+                        <span>权限管理</span>
+                    </template>
+                    <el-menu-item index="4-1" @click="changeToStudentPermissionManagement()">学生</el-menu-item>
+                    <el-menu-item index="4-2" @click="changeToCounsellorPermissionManagement()">辅导员</el-menu-item>
+                </el-submenu>
+                <el-menu-item index="5" @click="changeToRuleEntry()">
+                    <i class="el-icon-edit" ></i>
+                    <span slot="title">规则录入</span>
+                </el-menu-item>
+            </el-menu>
+        </el-col>
+        <el-col :span="19" >
+            <el-header style="text-align: right; font-size: 12px" >
+                <el-dropdown >
+                    <i class="el-icon-setting" style="margin-right: 15px"></i>
+                    <el-dropdown-menu slot="dropdown">
+                        <el-dropdown-item @click.native="gotoUser()">切换到学生端</el-dropdown-item>
+                        <el-dropdown-item @click.native="signOut()">退出系统</el-dropdown-item>
+                    </el-dropdown-menu>
+                </el-dropdown>
+                <span>{{this.adminData.account}}</span>
+            </el-header>
+            <el-main v-if="this.defaultPage">
+                <el-image
+                        style="width: 100%; height:580px"
+                        :src="defaultPageUrl">
+                </el-image>
+            </el-main>
+            <el-main v-if="this.userCenter">
+                <el-row>
+                    <el-col :span="8">
+                        <div class="grid-content bg-purple">
+                            <el-avatar :size="150" :src="circleUrl"></el-avatar>
+                        </div>
+                    </el-col>
+                    <el-col :span="16">
+                        <div class="grid-content bg-purple-light">
+                            <el-container>
+                                <el-main>
+                                    <el-form ref="form" :model="this.adminData" label-position="right" label-width="80px" size="large">
+                                        <!--label-width控制表单位置-->
+                                        <el-form-item label="角色">
+                                            <el-col>
+                                                <el-input v-model="this.adminData.role" readonly></el-input>
+                                            </el-col>
+                                        </el-form-item>
+                                        <el-form-item label="学号/工号">
+                                            <el-col>
+                                                <el-input v-model="this.adminData.account" readonly></el-input>
+                                            </el-col>
+                                        </el-form-item>
+                                        <el-form-item label="学院">
+                                            <el-col>
+                                                <el-input v-model="this.adminData.college" readonly></el-input>
+                                            </el-col>
+                                        </el-form-item>
+                                        <el-form-item label="班级">
+                                            <el-col>
+                                                <el-input v-model="this.adminData.theClass" readonly></el-input>
+                                            </el-col>
+                                        </el-form-item>
+                                        <el-form-item>
+                                            <el-button type="primary" @click="openChangePasswordDialog()">修改密码</el-button>
+                                        </el-form-item>
+                                    </el-form>
+                                    <el-dialog
+                                            title="修改密码"
+                                            :visible.sync="changePasswordDialogVisible"
+                                            width="30%"
+                                            center>
+                                        <el-form :model="this.changePasswordForm" ref="this.changePasswordForm" label-width="100px" class="demo-ruleForm">
+                                            <el-form-item label="原始密码" prop="originalPassword">
+                                                <el-input type="password"  v-model="changePasswordForm.originalPassword" show-password></el-input>
+                                            </el-form-item>
+                                            <el-form-item label="新密码" prop="checkPass">
+                                                <el-input type="password"  v-model="changePasswordForm.newPassword" show-password></el-input>
+                                            </el-form-item>
+                                            <el-form-item label="确认密码" prop="age">
+                                                <el-input type="password" v-model="changePasswordForm.checkPassword" show-password></el-input>
+                                            </el-form-item>
+                                            <el-form-item>
+                                                <el-button type="primary" @click="submitChangePasswordForm('this.changePasswordForm')">提交</el-button>
+                                                <el-button @click="closeChangePasswordDialog()">取消</el-button>
+                                            </el-form-item>
+                                        </el-form>
+                                    </el-dialog>
+                                </el-main>
+                            </el-container>
+                        </div>
+                    </el-col>
+                </el-row>
+            </el-main>
+            <el-main v-if="this.studentAudit" >
+                <el-table
+                        :data="this.classmatesData"
+                        style="width: 100%">
+                    <el-table-column
+                            prop="rulesContent"
+                            label="规则内容"
+                    >
+                    </el-table-column>
+
+                    <el-table-column label="证明材料地址"  show-overflow-tooltip>
+                        <template slot-scope="scope">
+                            <a :href="scope.row.file" target="_blank" class="buttonText">{{scope.row.file}}</a>
+                        </template>
+                    </el-table-column>
+
+                    <el-table-column
+                            prop="status"
+                            label="状态"
+                            align="center">
+                        <template slot-scope="scope">
+                            <el-tag
+                                    :type="scope.row.status == '1' ? 'success' : scope.row.status == '0'?'':'danger'"
+                                    disable-transitions>{{scope.row.status == '1' ? "审核通过" :scope.row.status ==
+                            '0'?"待审核":"打回"}}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" align="center">
+                        　　　　<template slot-scope="scope">
+                        　　　　　　<el-button type="danger" @click="roolBackAudit(scope.row.auditID)">打回</el-button>
+                                    <el-button type="primary" @click="generateScoreList(scope.row.auditID)">打分</el-button>
+                        　　　　</template>
+                    </el-table-column>
+                </el-table>
+                <el-dialog
+                        title="综测打分"
+                        :visible.sync="rateDialogVisible"
+                        width="30%"
+                        center>
+                    <el-radio-group v-model="auditRateForm">
+                        <el-radio v-for="(score, index) in scoreList" :key="index" :label="score">
+                            {{ score }}
+                        </el-radio>
+                    </el-radio-group>
+                    <el-row style="text-align: center; margin-top: 15px">
+                        <el-col :span="9">
+                            <div>
+                                <el-button type="primary" @click="submitAuditRate('this.changePasswordForm')">提交</el-button>
+                            </div>
+                        </el-col>
+                        <el-col :span="6">
+                            <div>
+                                <el-button @click="rateDialogVisible = false">取消</el-button>
+                            </div>
+                        </el-col>
+                    </el-row>
+                </el-dialog>
+            </el-main>
+            <el-main v-if="this.counsellorAudit" >
+                <el-table
+                        :data="studentData"
+                        border
+                        style="width: 100%"
+                        :default-sort = "{prop: 'account', order: 'descending'}">
+                    <el-table-column
+                            prop="belong"
+                            label="学号"
+                            align="center">
+                    </el-table-column>
+
+                    <el-table-column
+                            prop="score"
+                            label="分数"
+                            align="center">
+                    </el-table-column>
+                    <el-table-column label="证明材料地址"  show-overflow-tooltip>
+                        <template slot-scope="scope">
+                            <a :href="scope.row.file" target="_blank" class="buttonText">{{scope.row.file}}</a>
+                        </template>
+                    </el-table-column>
+                    <el-table-column
+                            prop="rulesContent"
+                            label="规则内容">
+                    </el-table-column>
+                    <el-table-column
+                            prop="state"
+                            label="状态"
+                            align="center">
+                        <template slot-scope="scope">
+                            <el-tag
+                                    :type="scope.row.status == '1' ? 'success' : scope.row.status == '0'?'':'danger'"
+                                    disable-transitions>{{scope.row.status == '1' ? "审核通过" :scope.row.status ==
+                            '0'?"待审核":"打回"}}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </el-main>
+            <!--权限管理部分-->
+            <el-main v-if="this.studentPermissionManagement">
+                <el-row type="flex" justify="left">
+                    权限授予
+                </el-row>
+                <el-row type="flex" justify="center" style="margin-bottom: 50px;display: flex;flex-wrap: wrap">
+                    <el-col :span="10">
+                        学号：
+                        <template>
+                            <el-select
+                                    v-model="userAccountValue"
+                                    filterable
+                                    remote
+                                    placeholder="请输入学号"
+                                    default-first-option
+                                    no-data-text="该学号不存在"
+                                    :remote-method="remoteMethod"
+                                    :loading="loading">
+                                <el-option
+                                        v-for="item in options"
+                                        :key="item.value"
+                                        :label="item.label"
+                                        :value="item.value">
+                                </el-option>
+                            </el-select>
+                        </template>
+                    </el-col>
+                    <el-col :span="5">
+                        <el-button type="primary" @click="PermissionGranting()">确定</el-button>
+                    </el-col>
+                    <el-dialog
+                            title="提示"
+                            :visible.sync="authorityDialog"
+                            width="40%">
+                        <el-row type="flex" justify="center" style="margin-bottom: 30px;display: flex;flex-wrap: wrap">
+                           <span>
+                              <el-descriptions>
+                                 <el-descriptions-item label="学号/工号">{{studentMessage.account}}</el-descriptions-item>
+                                 <el-descriptions-item label="权限">{{studentMessage.isAdmin}}</el-descriptions-item>
+                              </el-descriptions>
+                           </span>
+                        </el-row >
+                        <el-row type="flex" justify="center" style="margin-bottom: 50px;display: flex;flex-wrap: wrap">
+                            <span style="font-size: 15px">此操作将把权限授予给该用户，是否继续？</span>
+                        </el-row>
+                        <el-row type="flex" justify="center">
+                            <el-button type="primary" @click="submitStudentAuthority()">确 定</el-button>
+                            <el-button @click="authorityDialog = false">取 消</el-button>
+                        </el-row>
+                    </el-dialog>
+                </el-row>
+                <el-row type="flex" justify="center">
+                    <el-col :span="22">
+                        <el-table
+                                :data="studentAuthorityData"
+                                border
+                                style="width: 100%"
+                                :default-sort = "{prop: 'account', order: 'descending'}">
+                            <!--按学号升序排列-->
+                            <el-table-column
+                                    prop="account"
+                                    label="权限组"
+                                    align="center">
+                            </el-table-column>
+                            <el-table-column
+                                    align="center">
+                                <template slot-scope="studentScope">
+                                    <el-button type="primary" @click="getStudentPermission(studentScope.row.account)">移除</el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </el-col>
+                </el-row>
+                <el-dialog
+                        :modal="false"
+                        title="提示"
+                        :visible.sync="studentPermissionRemovalDialog"
+                        width="40%">
+                    <el-row type="flex" justify="center" style="margin-bottom: 50px;display: flex;flex-wrap: wrap">
+                        <span style="font-size: 15px">此操作将把该用户的权限收回，是否继续？</span>
+                    </el-row>
+                    <el-row type="flex" justify="center">
+                        <el-button type="primary" @click="permissionRemoval(removal)">确定</el-button>
+                        <el-button @click="studentPermissionRemovalDialog = false">取 消</el-button>
+                    </el-row>
+                </el-dialog>
+            </el-main>
+            <el-main v-if="this.counsellorPermissionManagement">
+                <el-row type="flex" justify="center">
+                    <el-col :span="22">
+                        <el-table
+                                :data="instructorAuthorityData"
+                                border
+                                style="width: 100%"
+                                :default-sort = "{prop: 'account', order: 'descending'}">
+                            <!--按学号升序排列-->
+                            <el-table-column
+                                    prop="account"
+                                    label="有管理权限的学生"
+                                    align="center">
+                            </el-table-column>
+                            <el-table-column
+                                    align="center">
+                                <template slot-scope="instructorScope">
+                                    <el-button type="primary" @click="getInstructorPermission(instructorScope.row.account)">移除</el-button>
+                                </template>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </el-col>
+                    <el-col :span="4">
+                        <el-button type="primary" @click="dialogTableVisible = true">添加</el-button>
+                    </el-col>
+                </el-row>
+                <el-dialog title="添加权限"
+                           :visible.sync="dialogTableVisible">
+                    <el-row type="flex" justify="center">
+                        <el-col :span="10">
+                            学号：
+                            <template>
+                                <el-select
+                                        v-model="userAccountValue"
+                                        filterable
+                                        remote
+                                        placeholder="请输入学号"
+                                        default-first-option
+                                        no-data-text="该学号不存在"
+                                        :remote-method="remoteMethod"
+                                        :loading="loading">
+                                    <el-option
+                                            v-for="item in options"
+                                            :key="item.value"
+                                            :label="item.label"
+                                            :value="item.value">
+                                    </el-option>
+                                </el-select>
+                            </template>
+                        </el-col>
+                        <el-col :span="5">
+                            <el-button type="primary" @click="PermissionGranting()">确定</el-button>
+                        </el-col>
+                        <el-dialog
+                                :modal="false"
+                                title="提示"
+                                :visible.sync="authorityDialog"
+                                width="40%">
+                            <el-row type="flex" justify="center" style="margin-bottom: 30px;display: flex;flex-wrap: wrap">
+                              <span>
+                                 <el-descriptions>
+                                    <el-descriptions-item label="学号">{{this.studentMessage.account}}</el-descriptions-item>
+                                    <el-descriptions-item label="权限">{{this.studentMessage.isAdmin}}</el-descriptions-item>
+                                 </el-descriptions>
+                              </span>
+                            </el-row >
+                            <el-row type="flex" justify="center" style="margin-bottom: 50px;display: flex;flex-wrap: wrap">
+                                <span style="font-size: 15px">此操作将把权限转授予给该用户，是否继续？</span>
+                            </el-row>
+                            <el-row type="flex" justify="center">
+                                <el-button type="primary" @click="submitChangeAuthority()">确 定</el-button>
+                                <el-button @click="authorityDialog = false">取 消</el-button>
+                            </el-row>
+                        </el-dialog>
+                    </el-row>
+                </el-dialog>
+                <el-dialog
+                        :modal="false"
+                        title="提示"
+                        :visible.sync="counsellorPermissionRemovalDialog"
+                        width="40%">
+                    <el-row type="flex" justify="center" style="margin-bottom: 50px;display: flex;flex-wrap: wrap">
+                        <span style="font-size: 15px">此操作将把该用户的权限收回，是否继续？</span>
+                    </el-row>
+                    <el-row type="flex" justify="center">
+                        <el-button type="primary" @click="permissionRemoval(removal)">确定</el-button>
+                        <el-button @click="counsellorPermissionRemovalDialog = false">取 消</el-button>
+                    </el-row>
+                </el-dialog>
+            </el-main>
+            <el-main v-if="this.ruleEntry">
+                <el-row type="flex" justify="center">
+                    <el-alert v-if="this.groupIdIsNull" title="请选择父级规则" type="warning" show-icon></el-alert>
+                    <el-alert v-if="this.contextIsNull" title="请输入规则内容" type="warning" show-icon></el-alert>
+                </el-row>
+                <el-row type="flex" justify="center">
+                    <el-col :span="16">
+                        <el-form ref="form" :model="ruleForm" label-width="150px" label-position="left">
+                            <el-form-item label="父级规则">
+                                <el-select v-model="ruleForm.Parent" placeholder="请选择父级规则">
+                                    <el-option label="思想品德综合规则" value="1"></el-option>
+                                    <el-option label="课程学习成绩综合规则" value="2"></el-option>
+                                    <el-option label="体艺综合规则" value="3"></el-option>
+                                    <el-option label="创新创业与实践能力综合规则" value="4"></el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="内容">
+                                <el-col :span="15">
+                                    <el-input type="textarea" v-model="ruleForm.content" rows="5" id="content"></el-input>
+                                </el-col>
+                            </el-form-item>
+                            <el-form-item label="是否为加分项？">
+                                <template>
+                                    <el-radio v-model="ruleRadio" label="0">是</el-radio>
+                                    <el-radio v-model="ruleRadio" label="1">否</el-radio>
+                                </template>
+                            </el-form-item>
+                            <el-form-item label="最大加分/减分项">
+                                <template>
+                                    <el-input-number v-model="maxScore" @change="handleRuleChange" :min="1" :max="100"></el-input-number>
+                                </template>
+                            </el-form-item>
+                        </el-form>
+                    </el-col>
+                </el-row>
+                <el-row type="flex" justify="center">
+                    <el-col :span="10">
+                        <el-button type="primary" @click="submitRuleForm()">立即创建</el-button>
+                    </el-col>
+                </el-row>
+                <el-dialog
+                        title="提示"
+                        :visible.sync="ruleDialog"
+                        width="30%">
+                    <span>创建成功</span>
+                </el-dialog>
+            </el-main>
+        </el-col>
+    </el-row>
+</div>
+<script src="../js/vue.js"></script>
+<script src="../element-ui/lib/index.js"></script>
+<script src="../js/jquery.min.js"></script>
+<link rel="stylesheet" href="../element-ui/lib/theme-chalk/index.css">
+<script>
+    new Vue({
+        el: "#app",
+        data() {
+            let classmatesData = [{
+                auditID:'',
+                belong:'',
+                status:'',
+                rulesID:'',
+                file:'',
+                score:'',
+                rulesContent:''
+            }];
+            let studentData = [{
+                auditID:'',
+                belong:'',
+                status:'',
+                rulesID:'',
+                file:'',
+                score:'',
+                rulesContent:''
+            }];
+            let options = [];
+            let list = [];
+            let studentSearchStates = [];
+            let studentMessage={
+                account: "",
+                isAdmin: ""
+            }
+            let removal;
+            let adminData = {
+                account: "",
+                isAdmin: 0,
+                role: '',
+                college: "",
+                theClass: "",
+                userID: ""
+            };
+            let items=[
+                { type: 'success', label: '已审核' },
+            ];
+            let ruleForm={
+                Parent:'',
+                content:'',
+                userID:'hhh'
+            };
+            let defaultPageUrl="../img/defaultPage.jpg";
+            let circleUrl= "../img/1.jpg";
+            let studentAuthorityData = [{
+                account:"",
+                isAdmin: 0,
+                role: '',
+                college: "",
+                theClass: "",
+                userID: ""
+            }];
+            let instructorAuthorityData = [{
+                account:"",
+            }];
+            let changePasswordForm = {
+                originalPassword : '',
+                newPassword : '',
+                checkPassword : '',
+                userID : ''
+            };
+            return {
+                classmatesData,
+                studentData,
+                removal,
+                instructorAuthorityData,
+                studentMessage,
+                options,
+                userAccountValue:[],
+                list,
+                studentSearchStates,
+                ruleForm,
+                items,
+                defaultPageUrl,
+                scoreList: [],
+                maxScore:'1',
+                ruleRadio: '1',
+                currentSelectAuditID:0,
+                auditRateForm:0,
+                rateDialogVisible:false,
+                defaultPage:true,
+                groupIdIsNull:false,
+                contextIsNull:false,
+                authorityDialog: false,
+                loading: false,
+                ruleDialog:false,
+                fileList: false,
+                table0: false,
+                table1: false,
+                table2:false,
+                table3:false,
+                table4:false,
+                dialogVisible: false,
+                dialogTableVisible: false,
+                aaa:false,
+                bbb:false,
+                changePasswordDialogVisible:false,
+                studentPermissionRemovalDialog:false,
+                counsellorPermissionRemovalDialog:false,
+                allMeasureManagement:false,
+                userCenter:false,
+                studentAudit:false,
+                counsellorAudit:false,
+                studentPermissionManagement:false,
+                counsellorPermissionManagement:false,
+                ruleEntry:false,
+                changePasswordForm,
+                adminData,
+                instructorAuthorityData,
+                studentAuthorityData,
+                circleUrl
+            }
+        },
+        methods: {
+            refresh(){
+                window.location.reload()
+            },
+            roolBackAudit(AuditID){
+                let _this = this;
+                $.ajax({
+                    url:'/measurement_war/audit/roolBack',
+                    type:'post',
+                    data:{
+                        auditID:AuditID
+                    },
+                    success:function(response){
+                        if(response.code  == 0){
+                            _this.$message({
+                                message: '打回成功！',
+                                type: 'success'
+                            });
+                        }
+                        setTimeout(this.refresh,1000);
+                    },
+                    error:function(response){
+                        _this.$message({
+                            message: '打回失败！',
+                            type: 'error'
+                        });
+                    }
+                })
+            },
+            submitAuditRate(){
+                let _this = this;
+                console.log(this.currentSelectAuditID)
+                console.log(this.auditRateForm)
+                $.ajax({
+                    url:'/measurement_war/audit/rate',
+                    type:'post',
+                    data:{
+                        "auditID":this.currentSelectAuditID,
+                        "score":this.auditRateForm,
+                    },
+                    success:function (response){
+                        if(response.code == 0){
+                            _this.$message({
+                                message: '打分成功！',
+                                type: 'success'
+                            });
+                            setTimeout(this.refresh,1000);
+                        }
+                    },
+                    error:function (response){
+                        alert(response.message)
+                    }
+                })
+            },
+            generateScoreList(auditID) {
+                this.currentSelectAuditID = auditID;
+                this.rateDialogVisible = true;
+                this.scoreList = [];
+                let maxScore = 0;
+                console.log("this.classmatesData")
+                console.log(this.classmatesData)
+                for(let item of this.classmatesData){
+                    console.log("item")
+                    console.log(item)
+                    console.log("item.auditID")
+                    console.log(item.auditID)
+                    console.log(typeof item.auditID)
+                    console.log("auditID")
+                    console.log(auditID)
+                    console.log(typeof auditID)
+                    console.log(item.auditID == auditID)
+                    if(item.auditID == auditID){
+                        maxScore = item.maxScore;
+                        console.log("item.maxScore")
+                        console.log(item.maxScore)
+                    }
+                }
+                console.log("maxScore")
+                console.log(maxScore)
+                for (let i = 1; i <= maxScore; i++) {
+                    this.scoreList.push(i);
+                }
+                console.log("this.scoreList")
+                console.log(this.scoreList)
+            },
+            getStudentPermission(e){
+                this.studentPermissionRemovalDialog = true;
+                this.removal = e;
+            },
+            getInstructorPermission(e){
+                this.counsellorPermissionRemovalDialog = true;
+                this.removal = e;
+            },
+            permissionRemoval(e) {
+                console.log("账户：");
+                console.log(e);
+                $.ajax({
+                    url: '/measurement_war/user/deleteUserAdmin',
+                    type: 'Post',
+                    data: {
+                        "account": e,
+                    },
+                    success: function (response) {
+                        console.log("被更改的账户：");
+                        console.log(response.data.account);
+                    },
+                    error: function (response) {
+                        alert(response)
+                    }
+                })
+                this.studentPermissionRemovalDialog = false;
+                this.counsellorPermissionRemovalDialog = false;
+            },
+            getAuditData() {
+                $.ajax({
+                    url: '/measurement_war/audit/find',
+                    type: 'Get',
+                    data:{
+                        "belong":this.adminData.account,
+                    },
+                    success: function (response) {
+                        console.log(response.data);
+                    },
+                    error: function (response) {
+                        alert(response)
+                    }
+                })
+                this.table0 = true
+            },
+            PermissionGranting() {
+                let _this = this;
+                console.log("uuu")
+                console.log(this.userAccountValue);
+                console.log(typeof this.userAccountValue)
+                console.log(this.options)
+                console.log(typeof  this.options)
+                this.authorityDialog = true
+                $.ajax({
+                    url:'/measurement_war/user/findUser',
+                    type:'Post',
+                    data:{
+                        "account":this.userAccountValue,
+
+                    },
+                    success: function (response) {
+                        console.log(this.userAccountValue),
+                            console.log("response.code:")
+                        console.log(response.code);
+                        if (response.code == 0) {
+                            console.log(response.data);
+                            // let jsonObject = response.data;
+                            _this.studentMessage.account = response.data.account;
+                            _this.studentMessage.isAdmin=response.data.isAdmin;
+
+                            // console.log(this.studentMessage.account);
+                            // console.log(this.studentMessage.isAdmin);
+
+
+                        }
+                    },
+                    error:function (response) {
+                        alert(response)
+                    }
+
+                })
+
+
+            },
+            submitRuleForm() {
+                console.log("kkkkkkkkkkk:");
+                console.log(this.userAccountValue);
+                if (this.ruleForm.Parent == "") {
+                    this.groupIdIsNull = true
+                    this.contextIsNull = false
+                } else if (this.ruleForm.content == "") {
+                    this.contextIsNull = true
+                    this.groupIdIsNull = false
+                } else {
+                    $.ajax({
+                        url: '/measurement_war/rules/add',
+                        type: 'post',
+                        data: {
+                            "groupID": this.ruleForm.Parent,
+                            "content": this.ruleForm.content,
+                            "addScore": this.ruleRadio,
+                            "belong": this.adminData.account,
+                            "maxScore": this.maxScore
+                        },
+                    })
+                }
+                if ((this.ruleForm.Parent != "") && (this.ruleForm.content != ""))
+                    this.ruleDialog = true;
+                /*this.studentPermissionRemovalDialog = true;*/
+            },
+            remoteMethod(query) {
+                this.list = this.studentSearchStates.map(item => {
+                    return { value: `${item}`, label: `${item}` };
+                });
+                if (query !== '') {
+                    this.loading = true;
+                    setTimeout(() => {
+                        this.loading = false;
+                        this.options = this.list.filter(item => {
+                            return item.label.toLowerCase()
+                                .indexOf(query.toLowerCase()) > -1;
+                        });
+                    }, 200);
+                } else {
+                    this.options = [];
+                }
+            },
+            submitStudentAuthority:function (){
+                $.ajax({
+                    url:'/measurement_war/user/fixAdminToUser',
+                    type:'post',
+                    data:{
+                        "account":this.studentMessage.account
+                    },
+                    success:function (response){
+                        if(response.code==40005){
+                            alert(response.message)
+                        }
+                        if(response.code==0){
+                            alert("授权成功!");
+                        }
+                    },
+                    error:function (response) {
+                        alert(response)
+                    },
+                })
+                this.authorityDialog = false;
+            },
+            submitChangeAuthority:function (){/*确定转授予权限后的操作*/
+                $.ajax({
+                    url:'/measurement_war/user/fixAdminToUser',
+                    type:'post',
+                    data:{
+                        "account":this.studentMessage.account
+                    },
+                    success:function (response){
+                        if(response.code==40005){
+                            alert(response.message)
+                        }
+                        if(response.code==0){
+                            alert("授权成功!");
+                        }
+                    },
+                    error:function (response) {
+                        alert(response)
+                    },
+                })
+                this.authorityDialog = false;
+                setTimeout(this.refresh, 1000);
+            },
+            submitChangeAuthority:function (){/*确定转授予权限后的操作*/
+                $.ajax({
+                    url:'/measurement_war/user/fixAdminToAdmin',
+                    type:'post',
+                    data:{
+                        "account":this.studentMessage.account
+                    },
+                    success:function (response){
+                        if(response.code==40005){
+                            alert(response.message)
+                        }
+                        if(response.code==0){
+                            alert("授权成功!");
+                        }
+                    },
+                    error:function (response) {
+                        alert(response)
+                    },
+                })
+                this.authorityDialog = false;
+                setTimeout(this.refresh, 1000);
+            },
+            handleRuleChange(value) { /*加分/减分项*/
+                console.log(value);
+            },
+            materialViewSelect:function(e){
+                // console.log(e);
+                if(e == '0')
+                {
+                    this.table1 = true
+                }else if(e == '1'){
+                    this.table2 = true
+                }else if(e == '2'){
+                    this.table3 = true
+                }else if(e == '3'){
+                    this.table4 = true
+                };
+            },
+            resetScore:function(){
+                this.dialogVisible=false;
+                this.studentRadio = 0;
+            },
+            fileViewSelect:function(e){
+                if(e == '0')
+                {
+                    this.fileTable1 = true
+                }else if(e == '1'){
+                    this.fileTable2 = true
+                }else if(e == '2'){
+                    this.fileTable3 = true
+                }else if(e == '3'){
+                    this.fileTable4 = true
+                };
+            },      /*模糊搜索部分方法开始*/
+            deleteRow(index, rows) {  /*删除记录操作*/
+                rows.splice(index, 1);
+            },
+            onSubmit() {
+                console.log('submit!');
+            },
+            signOut(){
+                $.ajax({
+                    url: '/measurement_war/user/logout',
+                    type: 'Get',
+                    success:function (response){
+                        if(response.code==0){
+                            window.location.href = "/measurement_war/index.html"
+                        }
+                    },
+                    error:function (response) {
+                        alert(response)
+                    }
+                })
+            },
+            gotoUser(){
+                window.location.href="/measurement_war/html/user.html"
+            },
+            changeToUserCenter(){
+                this.userCenter = true;
+                this.studentAudit = false;
+                this.counsellorAudit = false;
+                this.studentPermissionManagement = false;
+                this.counsellorPermissionManagement = false;
+                this.authorityManagement = false;
+                this.ruleEntry=false;
+                this.defaultPage=false;
+            },
+            changeToStudentAudit(){
+                let _this = this
+                if(_this.adminData.isAdmin > 7){
+                    _this.$message({
+                        message: '数据异常，空数据！',
+                        type: 'warning'
+                    });
+                }
+                this.userCenter = false;
+                this.studentAudit = true;
+                this.counsellorAudit = false;
+                this.studentPermissionManagement = false;
+                this.counsellorPermissionManagement = false;
+                this.ruleEntry=false;
+                this.defaultPage=false;
+            },
+            changeToCounsellorAudit(){
+                let _this = this
+                if(_this.adminData.isAdmin > 7){
+                    this.userCenter = false;
+                    this.studentAudit = false;
+                    this.counsellorAudit = true;
+                    this.studentPermissionManagement = false;
+                    this.counsellorPermissionManagement = false;
+                    this.ruleEntry=false;
+                    this.defaultPage=false;
+                }else{
+                    _this.$message({
+                        message: '权限不足！',
+                        type: 'error'
+                    });
+                }
+
+            },
+            changeToStudentPermissionManagement(){
+                this.userCenter = false;
+                this.studentAudit = false;
+                this.counsellorAudit = false;
+                this.studentPermissionManagement = true;
+                this.counsellorPermissionManagement = false;
+                this.ruleEntry=false;
+                this.defaultPage=false;
+            },
+            changeToCounsellorPermissionManagement(){
+                let _this = this
+                if(_this.adminData.isAdmin > 7) {
+                    this.userCenter = false;
+                    this.studentAudit = false;
+                    this.counsellorAudit = false;
+                    this.studentPermissionManagement = false;
+                    this.counsellorPermissionManagement = true;
+                    this.ruleEntry = false;
+                    this.defaultPage = false;
+                }else{
+                    _this.$message({
+                        message: '权限不足！',
+                        type: 'error'
+                    });
+                }
+            },
+            changeToRuleEntry(){
+                let _this = this
+                if(_this.adminData.isAdmin > 7) {
+                    this.userCenter = false;
+                    this.studentAudit = false;
+                    this.counsellorAudit = false;
+                    this.studentPermissionManagement = false;
+                    this.counsellorPermissionManagement = false;
+                    this.ruleEntry = true;
+                    this.defaultPage = false;
+                }else{
+                    _this.$message({
+                        message: '权限不足！',
+                        type: 'error'
+                    });
+                }
+            },
+            submitChangePasswordForm(data){
+                let _this = this;
+                _this.changePasswordForm.userID = _this.adminData.userID;
+                if(_this.changePasswordForm.checkPassword == _this.changePasswordForm.newPassword){
+                    $.ajax({
+                        url: '/measurement_war/user/changPassword',
+                        type: 'post',
+                        data: {
+                            "userID": _this.changePasswordForm.userID,
+                            "oldPassword": _this.changePasswordForm.originalPassword,
+                            "newPassword":_this.changePasswordForm.newPassword,
+                            "checkPassword":_this.changePasswordForm.checkPassword
+                        },
+                        success:function (response){
+                            if(response.code == 40003){
+                                _this.$message({
+                                    message: '原始密码不正确',
+                                    type: 'warning'
+                                });
+                            }else if(response.code == 0) {
+                                _this.$message({
+                                    message: '修改成功',
+                                    type: 'success'
+                                });
+                                _this.signOut();
+                                window.location.href = "/measurement_war/index.html";
+                            }
+                        },
+                        error:function (response) {
+                            alert(response.message)
+                        }
+                    })
+                }else {
+                    _this.$message({
+                        message: '两次密码不一致',
+                        type: 'warning'
+                    });
+                }
+            },
+            openChangePasswordDialog(){
+                this.changePasswordDialogVisible = true;
+            },
+            closeChangePasswordDialog(){
+                this.changePasswordDialogVisible = false;
+            },
+
+        },
+        mounted() {
+            let _this = this;
+            $.ajax({
+                url:'/measurement_war/audit/listByUser',
+                type:'get',
+                success:function (response){
+                    console.log("listByUser")
+                    console.log(response)
+                    if(response.code == 0){
+                        console.log(response.data)
+
+                        _this.classmatesData = response.data;
+                    }
+                    console.log(_this.classmatesData)
+
+                },
+                error:function (response) {
+                    alert(response.message)
+                }
+            });
+            $.ajax({
+                url:'/measurement_war/audit/listAll',
+                type:'get',
+                success:function (response){
+                    console.log("listAll")
+                    console.log(response)
+                    if(response.code == 0){
+                        console.log(response.data)
+                        _this.studentData = response.data;
+                    }
+                    console.log(_this.studentData)
+
+                },
+                error:function (response) {
+                    alert(response.message)
+                }
+            });
+            $.ajax({
+                url: '/measurement_war/user/findUserIsAdmin',
+                type: 'Get',
+                success: function (response) {
+                    _this.studentAuthorityData = response.data;
+                    console.log("权限组信息1：");
+                    console.log(response.data);
+                    console.log("权限组信息2：");
+                    console.log(_this.studentAuthorityData);
+                    _this.studentAuthorityData = response.data;
+                },
+                error: function (response) {
+                    alert(response)
+                }
+            });
+            $.ajax({
+                url: '/measurement_war/user/findUserAdmin',
+                type: 'Get',
+                success: function (response) {
+                    _this.instructorAuthorityData = response.data;
+                    console.log("权限组信息3：");
+                    console.log(response.data);
+                    console.log("权限组信息4：");
+                    console.log(_this.instructorAuthorityData);
+                },
+                error: function (response) {
+                    alert(response)
+                }
+            });
+            $.ajax({
+                url: '/measurement_war/user/current',
+                type: 'Get',
+                success:function (response){
+                    if (response.code == 300 || response.code == 200) {
+                        console.log(response.data);
+                        _this.adminData.account = response.data.account;
+                        _this.adminData.isAdmin = response.data.isAdmin;
+                        _this.adminData.college = response.data.college;
+                        _this.adminData.theClass = response.data.theClass;
+                        _this.adminData.userID = response.data.userID;
+                        if(_this.adminData.isAdmin > 0){
+                            _this.adminData.role = '管理员'
+                        }
+                        $.ajax({
+                            url: '/measurement_war/audit/find',
+                            type: 'post',
+                            data:{
+                                "belong":_this.adminData.account
+                            },
+                            success:function (response){
+                                if (response.code == 0) {
+                                    console.log("response.data")
+                                    console.log(response.data);
+                                    _this.userAuditData = response.data
+                                }
+                                console.log(_this.userAuditData)
+                            },
+                            error:function (response) {
+                                alert(response)
+                            }
+                        })
+
+                    } else {
+                        window.location.href = "/measurement_war/index.html"
+                    }
+                },
+
+                error:function (response) {
+                    alert(response)
+                }
+            });
+
+
+            $.ajax({
+                url: '/measurement_war/user/current',
+                type: 'Get',
+                success:function (response){
+                    if(response.code==300 ){
+                        console.log(response.data);
+                        _this.adminData= response.data;
+
+                        if(_this.adminData.isAdmin > 0){
+                            _this.adminData.role = '管理员'
+                        }
+
+                    }else {
+                        alert("权限不足！")
+                        window.location.href = "/measurement_war/index.html"
+                    }
+                },
+
+                error:function (response) {
+                    alert(response)
+                },
+                changeToUserCenter(){
+                    this.userCenter = true;
+                    this.comprehensiveAudit = false;
+                    this.authorityManagement=false;
+
+                },
+                changeToManagement(){
+                    this.userCenter = false;
+                    this.allMeasureManagement = true;
+                },
+                submitChangePasswordForm(data){
+                    let _this = this;
+                    _this.changePasswordForm.userID = _this.adminData.userID;
+                    if(_this.changePasswordForm.checkPassword == _this.changePasswordForm.newPassword){
+                        $.ajax({
+                            url: '/measurement_war/user/changPassword',
+                            type: 'post',
+                            data: {
+                                "userID": _this.changePasswordForm.userID,
+                                "oldPassword": _this.changePasswordForm.originalPassword,
+                                "newPassword":_this.changePasswordForm.newPassword,
+                                "checkPassword":_this.changePasswordForm.checkPassword
+                            },
+                            success:function (response){
+                                if(response.code == 40003){
+                                    _this.$message({
+                                        message: '原始密码不正确',
+                                        type: 'warning'
+                                    });
+                                }else if(response.code == 0) {
+                                    _this.$message({
+                                        message: '修改成功',
+                                        type: 'success'
+                                    });
+                                    _this.signOut();
+                                    window.location.href = "/measurement_war/index.html";
+                                }
+                            },
+                            error:function (response) {
+                                alert(response.message)
+                            }
+                        })
+                    }else {
+                        _this.$message({
+                            message: '两次密码不一致',
+                            type: 'warning'
+                        });
+                    }
+                },
+            }),
+                $.ajax({
+                    url: '/measurement_war/user/findAll',
+                    type: 'Get',
+                    success: function (response) {
+                        if (response.code == 0) {
+                            console.log(response.data);
+                            // let jsonObject = response.data;
+                            _this.studentSearchStates = response.data;
+                            // _this.studentSearchStates =
+                            console.log("this.studentSearchStates");
+                            console.log(_this.studentSearchStates);
+                        }
+                    }
+
+
+                })
+
+        }
+    })
+</script>
+</body>
+</html>

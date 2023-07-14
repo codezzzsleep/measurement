@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gxnu.mapper.RulesMapper">
+
+
+    <insert id="insertIntoRules">
+        insert into rules(groupID,content,addScore,maxScore,belong) values (#{groupID},#{content},#{addScore},#{maxScore},#{belong})
+    </insert>
+    <update id="updateRules">
+        update rules set groupID=#{groupID},content=#{content},addScore=#{addScore},maxScore=#{maxScore} where rulesID=#{rulesID}
+    </update>
+    <update id="deleteRules">
+        update rules set isDelete=1 where rulesID=#{rulesID}
+    </update>
+    <select id="selectRulesByBelong" resultType="com.gxnu.domain.Rules">
+        select * from rules where belong=#{belong} and isDelete=0
+    </select>
+    <select id="selectRulesByRulesID" resultType="com.gxnu.domain.Rules">
+        select * from rules where rulesID=#{rulesID}
+    </select>
+    <select id="selectRulesByGroupID" resultType="com.gxnu.domain.Rules">
+        select * from rules where groupID=#{groupID}
+    </select>
+
+</mapper>
